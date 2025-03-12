@@ -1,17 +1,19 @@
 package ca.mcmaster.se2aa4.island.teamXXX;
 
 import java.io.StringReader;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
-import eu.ace_design.island.bot.IExplorerRaid; //game engine
-import org.json.JSONObject;
+import org.json.JSONObject; //game engine
 import org.json.JSONTokener;
+
+import eu.ace_design.island.bot.IExplorerRaid;
 
 public class Explorer implements IExplorerRaid {
 
     private final Logger logger = LogManager.getLogger();
     private DroneState drone;
+    private Radar drone_radar;
 
     @Override
     public void initialize(String s) {
@@ -27,7 +29,7 @@ public class Explorer implements IExplorerRaid {
         drone = new DroneState(0, 0, direction, batteryLevel);
         logger.info("Drone initialized at ({}, {}), facing {}, with battery {}", 0, 0, direction, batteryLevel);
 
-
+        drone_radar = new Radar();
     }
 
     //use this method to call a specific request to the drone
@@ -41,10 +43,17 @@ public class Explorer implements IExplorerRaid {
             decision.put("action", "fly"); //fly forward
             decision.put("action", "heading"); //change direction
             decision.put("parameters", drone.getHeading());
-            drone.changeDirection("R"); //testing by turning right
+            //drone.changeDirection("R"); //testing by turning right
             drone.move(); //this method is from the DroneState Class basically makes the drone move
             logger.info("Drone is located at x: {}, y: {}", drone.getX(), drone.getY());
             logger.debug(drone.getBattery());
+
+            // doing the radar part here:
+            decision.put("action", "echo");
+            JSONObject params = new JSONObject();
+            params.put("direction", drone.getHeading()); // ???
+            decision.put("parameters", params);
+            logger.info("Drone is scanning in direction: {}", drone.getHeading());
         }
         else{ //battery dead
             decision.put("action", "stop"); // we stop the exploration immediately
@@ -67,6 +76,8 @@ public class Explorer implements IExplorerRaid {
 
         drone.updateBatteryLife(cost); //deplete the drone battery by the cost
 
+        //updating the range and found (GROUND/OUT OF RANGE) in radar 
+        drone_radar.updateRadarData(extraInfo);
     }
 
     @Override
