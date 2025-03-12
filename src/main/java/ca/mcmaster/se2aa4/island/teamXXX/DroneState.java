@@ -48,7 +48,28 @@ public class DroneState {
     }
 
     //updating the direction through hard code right now
+    //the plane can only turn left or right ill use L or R
     public void changeDirection(String nextDirection){
+        
+        String[] directions = {"N", "E", "S", "W"};
+        int directionIndex;
+
+        //optimize this later, you dont need to check each time you change direction
+        //you should store the directionIndex for later use
+        for(directionIndex = 0; directionIndex < directions.length; directionIndex++){
+            if(getHeading().equalsIgnoreCase(directions[directionIndex])){
+                break;
+            }
+        }
+
+        //this will set the direction to the right value if it turns left or right from where it currently is
+        if(nextDirection.equalsIgnoreCase("L")){
+            updateHeading(directions[(directionIndex-1)%4]);
+        }
+        else if(nextDirection.equalsIgnoreCase("R")){
+            updateHeading(directions[(directionIndex+1)%4]);
+        }
+        
         droneLogger.info("Turning from facing {}, to {}", heading, nextDirection);
         this.heading = nextDirection;
     }
