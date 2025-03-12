@@ -47,6 +47,12 @@ public class DroneState {
         droneLogger.debug("Moved to ({}, {})", x, y, heading);
     }
 
+    //updating the direction through hard code right now
+    public void changeDirection(String nextDirection){
+        droneLogger.info("Turning from facing {}, to {}", heading, nextDirection);
+        this.heading = nextDirection;
+    }
+
     //updates the heading to where it is now facing
     public void updateHeading(String newHeading){
         this.heading = newHeading;

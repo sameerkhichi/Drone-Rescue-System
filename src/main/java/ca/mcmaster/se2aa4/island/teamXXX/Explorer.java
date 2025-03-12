@@ -4,7 +4,7 @@ import java.io.StringReader;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import eu.ace_design.island.bot.IExplorerRaid;
+import eu.ace_design.island.bot.IExplorerRaid; //game engine
 import org.json.JSONObject;
 import org.json.JSONTokener;
 
@@ -39,7 +39,9 @@ public class Explorer implements IExplorerRaid {
         if(drone.getBattery() > 0){
             //drone movement is handled by the 
             decision.put("action", "fly"); //fly forward
+            decision.put("action", "heading"); //change direction
             decision.put("parameters", drone.getHeading());
+            drone.changeDirection("S"); //testing by moving west
             drone.move(); //this method is from the DroneState Class basically makes the drone move
             logger.info("Drone is located at x: {}, y: {}", drone.getX(), drone.getY());
             logger.debug(drone.getBattery());
