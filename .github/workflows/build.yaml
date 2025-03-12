@@ -24,4 +24,3 @@ jobs:
         run: mvn --batch-mode clean package -DskipTests
       - name: running tests
         run: mvn --batch-mode test
-

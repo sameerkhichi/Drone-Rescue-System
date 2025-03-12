@@ -11,6 +11,7 @@ import org.json.JSONTokener;
 public class Explorer implements IExplorerRaid {
 
     private final Logger logger = LogManager.getLogger();
+    private DroneState drone;
 
     @Override
     public void initialize(String s) {
@@ -21,12 +22,28 @@ public class Explorer implements IExplorerRaid {
         Integer batteryLevel = info.getInt("budget");
         logger.info("The drone is facing {}", direction);
         logger.info("Battery level is {}", batteryLevel);
+
+        //starting at 0,0 for now 
+        drone = new DroneState(0, 0, direction, batteryLevel);
+        logger.info("Drone initialized at ({}, {}), facing {}, with battery {}", 0, 0, direction, batteryLevel);
+
+
     }
 
     @Override
     public String takeDecision() {
         JSONObject decision = new JSONObject();
-        decision.put("action", "stop"); // we stop the exploration immediately
+        
+        if(drone.getBattery() > 0){
+            //drone movement is handled by the 
+            decision.put("action", "move");
+            decision.put("parameters", drone.getHeading());
+            drone.move(); //this method is from the DroneState Class basically makes the drone move
+        }
+        else{
+            decision.put("action", "stop"); // we stop the exploration immediately
+        }
+        
         logger.info("** Decision: {}",decision.toString());
         return decision.toString();
     }
@@ -44,7 +61,7 @@ public class Explorer implements IExplorerRaid {
     }
 
     @Override
-    public String deliverFinalReport() {
+    public String deliverFinalReport() { //doesnt give anything rn - to update later 
         return "no creek found";
     }
 
