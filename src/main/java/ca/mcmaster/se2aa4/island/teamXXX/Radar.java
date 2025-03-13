@@ -16,7 +16,7 @@ public class Radar {
     public void updateRadarData(JSONObject extras){
         this.range = extras.getInt("range");
         this.found = extras.getString("found");
-        logger.info("Radar scan results: {} found at range {}", found, range);
+        logger.debug("Radar scan results: {} found at range {}", found, range);
     }
     
     public int getRange(){

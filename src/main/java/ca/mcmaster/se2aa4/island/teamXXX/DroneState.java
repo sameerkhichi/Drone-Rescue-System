@@ -65,7 +65,7 @@ public class DroneState {
 
         //this will set the direction to the right value if it turns left or right from where it currently is
         if(nextDirection.equalsIgnoreCase("L")){
-            updateHeading(directions[((directionIndex-1)%4)]);
+            updateHeading(directions[((directionIndex+3)%4)]);
         }
         else if(nextDirection.equalsIgnoreCase("R")){
             updateHeading(directions[((directionIndex+1)%4)]);

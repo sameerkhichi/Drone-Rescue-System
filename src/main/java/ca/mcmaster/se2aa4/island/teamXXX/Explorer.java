@@ -43,8 +43,8 @@ public class Explorer implements IExplorerRaid {
             decision.put("action", "fly"); //fly forward
             decision.put("action", "heading"); //change direction
             decision.put("parameters", drone.getHeading());
-            drone.changeDirection("R"); //testing by turning right
             drone.move(); //this method is from the DroneState Class basically makes the drone move
+            drone.changeDirection("L"); //testing by turning right
             logger.info("Drone is located at x: {}, y: {}", drone.getX(), drone.getY());
             logger.debug(drone.getBattery());
 
@@ -54,7 +54,8 @@ public class Explorer implements IExplorerRaid {
             params.put("direction", drone.getHeading()); // ???
             decision.put("parameters", params);
             logger.info("Drone is scanning in direction: {}", drone.getHeading());
-        }
+
+            }
         else{ //battery dead
             decision.put("action", "stop"); // we stop the exploration immediately
         }
