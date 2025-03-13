@@ -53,6 +53,7 @@ public class DroneState {
         
         String[] directions = {"N", "E", "S", "W"};
         int directionIndex;
+        String prevHeading = heading;
 
         //optimize this later, you dont need to check each time you change direction
         //you should store the directionIndex for later use
@@ -64,14 +65,13 @@ public class DroneState {
 
         //this will set the direction to the right value if it turns left or right from where it currently is
         if(nextDirection.equalsIgnoreCase("L")){
-            updateHeading(directions[(directionIndex-1)%4]);
+            updateHeading(directions[((directionIndex-1)%4)]);
         }
         else if(nextDirection.equalsIgnoreCase("R")){
-            updateHeading(directions[(directionIndex+1)%4]);
+            updateHeading(directions[((directionIndex+1)%4)]);
         }
         
-        droneLogger.info("Turning from facing {}, to {}", heading, nextDirection);
-        this.heading = nextDirection;
+        droneLogger.info("Turning from facing {}, to {}", prevHeading, getHeading());
     }
 
     //updates the heading to where it is now facing

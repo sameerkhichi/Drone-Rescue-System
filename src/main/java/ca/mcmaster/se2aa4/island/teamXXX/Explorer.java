@@ -43,7 +43,7 @@ public class Explorer implements IExplorerRaid {
             decision.put("action", "fly"); //fly forward
             decision.put("action", "heading"); //change direction
             decision.put("parameters", drone.getHeading());
-            //drone.changeDirection("R"); //testing by turning right
+            drone.changeDirection("R"); //testing by turning right
             drone.move(); //this method is from the DroneState Class basically makes the drone move
             logger.info("Drone is located at x: {}, y: {}", drone.getX(), drone.getY());
             logger.debug(drone.getBattery());
