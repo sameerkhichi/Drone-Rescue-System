@@ -7,7 +7,8 @@ import eu.ace_design.island.bot.IExplorerRaid;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 
-
+//we should turn drone state into an interface with the different actions the drone can have
+//the We should also split move and changedirection methods into classes to adhere to SRP
 public class DroneState {
     
     private final Logger droneLogger = LogManager.getLogger();
@@ -17,6 +18,7 @@ public class DroneState {
     private int y;
     private String heading;
     private int battery;
+    private int startLevel;
 
 
     //constructor for the initialization of the attributes for the drone
@@ -25,6 +27,7 @@ public class DroneState {
         this.heading = startHeading;
         this.x = startX;
         this.y = startY;
+        setStartingBatteryCapacity(startBatteryLevel);
     }
 
     public void move(){
@@ -65,9 +68,11 @@ public class DroneState {
 
         //this will set the direction to the right value if it turns left or right from where it currently is
         if(nextDirection.equalsIgnoreCase("L")){
+            move();
             updateHeading(directions[((directionIndex+3)%4)]);
         }
         else if(nextDirection.equalsIgnoreCase("R")){
+            move();
             updateHeading(directions[((directionIndex+1)%4)]);
         }
         
@@ -99,6 +104,14 @@ public class DroneState {
 
     public int getBattery(){
         return battery;
+    }
+
+    public int getStartingBatteryCapacity(){
+        return startLevel;
+    }
+
+    public void setStartingBatteryCapacity(int startLevel){
+        this.startLevel = startLevel;
     }
 
 }

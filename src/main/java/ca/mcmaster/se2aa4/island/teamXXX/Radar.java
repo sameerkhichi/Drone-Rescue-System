@@ -27,4 +27,9 @@ public class Radar {
         return found;
     }
 
+    //used to set found to null when extras are not found
+    public void nothingFound(){
+        this.found = "";
+    }
+
 }
