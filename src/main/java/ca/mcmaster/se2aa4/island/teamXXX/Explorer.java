@@ -1,3 +1,7 @@
+
+// grid is 53 x 52. 53 squares to east and 52 below. Drone starts at top left
+
+
 package ca.mcmaster.se2aa4.island.teamXXX;
 
 import java.io.StringReader;
@@ -36,13 +40,18 @@ public class Explorer implements IExplorerRaid {
     @Override
     public String takeDecision() {
         JSONObject decision = new JSONObject();
+        JSONObject params = new JSONObject();
+
+
         
         //this will just loop till x=53 for now - will deal with movement decisions later
         if(drone.getBattery() > 0){
             //drone movement is handled by the 
-            decision.put("action", "fly"); //fly forward
-            decision.put("action", "heading"); //change direction
-            decision.put("parameters", drone.getHeading());
+            
+
+            //decision.put("action", "fly"); //fly forward
+            //decision.put("action", "heading"); //change direction
+            //params.put("parameters", drone.getHeading());
             drone.move(); //this method is from the DroneState Class basically makes the drone move
             drone.changeDirection("L"); //testing by turning right
             logger.info("Drone is located at x: {}, y: {}", drone.getX(), drone.getY());
@@ -50,8 +59,7 @@ public class Explorer implements IExplorerRaid {
 
             // doing the radar part here:
             decision.put("action", "echo");
-            JSONObject params = new JSONObject();
-            params.put("direction", drone.getHeading()); // ???
+            params.put("direction", "S"); // ???
             decision.put("parameters", params);
             logger.info("Drone is scanning in direction: {}", drone.getHeading());
 
