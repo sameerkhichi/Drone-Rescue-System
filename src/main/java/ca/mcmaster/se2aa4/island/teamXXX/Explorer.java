@@ -49,18 +49,26 @@ public class Explorer implements IExplorerRaid {
         JSONObject headingParams = new JSONObject();
         JSONObject radarParams = new JSONObject();
 
-        //if the battery is full that means it is the first action
-        //goes south and radars east to find some land
-        if(drone.getBattery() == drone.getStartingBatteryCapacity()){
+        // Stops search if the drone ran out of battery
+        if (drone.getBattery() <= 0) {
+            droneSearchMode = DroneSearchMode.OFF;
+        }
+
+        if (droneSearchMode == DroneSearchMode.START) {
             decision.put("action", "heading"); //change direction to south to start
             drone.changeDirection("R"); 
             headingParams.put("direction", drone.getHeading()); 
             decision.put("parameters", headingParams); //cant pass string in here must be JSON object - use wrapper JSON
-        }
-        
-        //if the battery isnt dead and its not full either
-        if(drone.getBattery() > 0 && drone.getBattery() != drone.getStartingBatteryCapacity()){
-            
+            droneSearchMode = DroneSearchMode.FIND_GROUND; // change to find ground mode
+        } 
+        else if (droneSearchMode == DroneSearchMode.FIND_GROUND) {
+
+            /*
+             * Strategy:
+             * - Keep moving South until land is found to the East
+             * - Turn to the East and continue flying forwards until directly over ground
+             */
+
             /*
              * Problem here:
              * as is the drone will fly down and radar if nothing is found
@@ -69,15 +77,16 @@ public class Explorer implements IExplorerRaid {
              * This though just keeps flying down no matter what.
              */
 
-            //if the radar found something then fly forward
-            if(drone_radar.getFound().equalsIgnoreCase("GROUND")){
-                // scans when range is 0
+            // If the drone's radar detected ground
+            if (drone_radar.getFound().equalsIgnoreCase("GROUND")) {
+                // If the drone is currently over ground, scan
                 if (drone_radar.getRange() == 0) {
                     decision.put("action", "scan");
-                    drone_radar.resetRange(); // resets range so that drone is able to fly again
+                    //drone_radar.resetRange(); // resets range so that drone is able to fly again
+                    droneSearchMode = DroneSearchMode.FIND_CREEK; // Change to find creek mode once island is found
                 }
                 //if the drone is still heading south after finding land to the east
-                else if(drone.getHeading().equalsIgnoreCase("S")){
+                else if (drone.getHeading().equalsIgnoreCase("S")) {
                     drone.setTurningStatus(true);
 
                     //turning back towards the east and fly that way
@@ -85,10 +94,8 @@ public class Explorer implements IExplorerRaid {
                     drone.changeDirection("L"); 
                     headingParams.put("direction", drone.getHeading()); 
                     decision.put("parameters", headingParams);
-
-
                 }
-                else{
+                else {
                     //finished the turn start flying east
                     drone.setTurningStatus(false);
                     decision.put("action", "fly"); //fly forward
@@ -97,18 +104,25 @@ public class Explorer implements IExplorerRaid {
                     logger.debug(drone.getBattery());
                 }
             }
-
-            else{
+            else {
                 // doing the radar part here:
                 decision.put("action", "echo");
                 radarParams.put("direction", "E"); // change the heading to scan on the left and right of the wings
                 decision.put("parameters", radarParams);
                 logger.info("Drone is scanning in direction: {}", radarParams);
             }
+        }
+        else if (droneSearchMode == DroneSearchMode.FIND_CREEK) {
+            /*
+             * Strategy:
+             * - Navigate drone around coastline to find creeks
+             */
+
+            // PUT ACTIONS HERE
+            decision.put("action", "stop"); // placeholder
 
         }
-
-        if(drone.getBattery() <= 0){ //battery dead
+        else if (droneSearchMode == DroneSearchMode.OFF) {
             decision.put("action", "stop"); // we stop the exploration immediately
         }
         

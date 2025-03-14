@@ -29,4 +29,8 @@ public class PhotoScanner {
         }
         return false;
     }
+
+    public boolean hasCreek() {
+        return (creeks!=null);
+    }
 }
