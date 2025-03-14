@@ -19,6 +19,7 @@ public class DroneState {
     private String heading;
     private int battery;
     private int startLevel;
+    private boolean turningTowardsLand = false;
 
 
     //constructor for the initialization of the attributes for the drone
@@ -112,6 +113,14 @@ public class DroneState {
 
     public void setStartingBatteryCapacity(int startLevel){
         this.startLevel = startLevel;
+    }
+
+    public boolean getTurningStatus(){
+        return turningTowardsLand;
+    }
+
+    public void setTurningStatus(boolean turningTowardsLand){
+        this.turningTowardsLand = turningTowardsLand;
     }
 
 }

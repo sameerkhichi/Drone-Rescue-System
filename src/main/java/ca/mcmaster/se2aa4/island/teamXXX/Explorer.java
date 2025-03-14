@@ -45,13 +45,15 @@ public class Explorer implements IExplorerRaid {
         JSONObject radarParams = new JSONObject();
 
         //if the battery is full that means it is the first action
+        //goes south and radars east to find some land
         if(drone.getBattery() == drone.getStartingBatteryCapacity()){
             decision.put("action", "heading"); //change direction to south to start
             drone.changeDirection("R"); 
             headingParams.put("direction", drone.getHeading()); 
             decision.put("parameters", headingParams); //cant pass string in here must be JSON object - use wrapper JSON
         }
-    
+        
+        //if the battery isnt dead and its not full either
         if(drone.getBattery() > 0 && drone.getBattery() != drone.getStartingBatteryCapacity()){
             
             /*
@@ -64,10 +66,27 @@ public class Explorer implements IExplorerRaid {
 
             //if the radar found something then fly forward
             if(drone_radar.getFound().equalsIgnoreCase("GROUND")){
-                decision.put("action", "fly"); //fly forward
-                drone.move(); //this method is from the DroneState Class basically makes the drone move
-                logger.info("Drone is located at x: {}, y: {}", drone.getX(), drone.getY());
-                logger.debug(drone.getBattery());
+
+                //if the drone is still heading south after finding land to the east
+                if(drone.getHeading().equalsIgnoreCase("S")){
+                    drone.setTurningStatus(true);
+
+                    //turning back towards the east and fly that way
+                    decision.put("action", "heading");
+                    drone.changeDirection("L"); 
+                    headingParams.put("direction", drone.getHeading()); 
+                    decision.put("parameters", headingParams);
+
+
+                }
+                else{
+                    //finished the turn start flying east
+                    drone.setTurningStatus(false);
+                    decision.put("action", "fly"); //fly forward
+                    drone.move(); //this method is from the DroneState Class basically makes the drone move
+                    logger.info("Drone is located at x: {}, y: {}", drone.getX(), drone.getY());
+                    logger.debug(drone.getBattery());
+                }
             }
 
             else{
@@ -110,7 +129,7 @@ public class Explorer implements IExplorerRaid {
             //updating the range and found (GROUND/OUT OF RANGE) in radar 
             drone_radar.updateRadarData(extraInfo);
         }
-        else{
+        if(extraInfo.isEmpty() && !drone.getTurningStatus()){
             drone_radar.nothingFound();
         }
 
