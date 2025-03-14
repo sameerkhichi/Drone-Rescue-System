@@ -32,4 +32,8 @@ public class Radar {
         this.found = "";
     }
 
+    public void resetRange() {
+        this.range = -1;
+    }
+
 }

@@ -66,9 +66,13 @@ public class Explorer implements IExplorerRaid {
 
             //if the radar found something then fly forward
             if(drone_radar.getFound().equalsIgnoreCase("GROUND")){
-
+                // scans when range is 0
+                if (drone_radar.getRange() == 0) {
+                    decision.put("action", "scan");
+                    drone_radar.resetRange(); // resets range so that drone is able to fly again
+                }
                 //if the drone is still heading south after finding land to the east
-                if(drone.getHeading().equalsIgnoreCase("S")){
+                else if(drone.getHeading().equalsIgnoreCase("S")){
                     drone.setTurningStatus(true);
 
                     //turning back towards the east and fly that way
@@ -126,8 +130,13 @@ public class Explorer implements IExplorerRaid {
         drone.updateBatteryLife(cost); 
 
         if(!extraInfo.isEmpty()){
-            //updating the range and found (GROUND/OUT OF RANGE) in radar 
-            drone_radar.updateRadarData(extraInfo);
+            if (extraInfo.has("found")) { // if action was echo
+                //updating the range and found (GROUND/OUT OF RANGE) in radar 
+                drone_radar.updateRadarData(extraInfo);
+            } else if (extraInfo.has("creeks")) { // if action was scan
+                logger.info("Checking results of scan");
+                // placeholder
+            }
         }
         if(extraInfo.isEmpty() && !drone.getTurningStatus()){
             drone_radar.nothingFound();
