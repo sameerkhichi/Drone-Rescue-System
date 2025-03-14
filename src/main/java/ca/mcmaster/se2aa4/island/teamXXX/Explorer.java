@@ -8,6 +8,7 @@ import java.io.StringReader;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.json.JSONArray;
 import org.json.JSONObject; 
 import org.json.JSONTokener;
 
@@ -18,6 +19,8 @@ public class Explorer implements IExplorerRaid {
     private final Logger logger = LogManager.getLogger();
     private DroneState drone;
     private Radar drone_radar;
+    private PhotoScanner drone_scanner;
+    private DroneSearchMode droneSearchMode;
 
     @Override
     public void initialize(String s) {
@@ -34,6 +37,8 @@ public class Explorer implements IExplorerRaid {
         logger.info("Drone initialized at ({}, {}), facing {}, with battery {}", 0, 0, direction, batteryLevel);
 
         drone_radar = new Radar();
+        drone_scanner = new PhotoScanner();
+        droneSearchMode = DroneSearchMode.START;
     }
 
     //use this method to call a specific request to the drone
@@ -135,7 +140,7 @@ public class Explorer implements IExplorerRaid {
                 drone_radar.updateRadarData(extraInfo);
             } else if (extraInfo.has("creeks")) { // if action was scan
                 logger.info("Checking results of scan");
-                // placeholder
+                drone_scanner.updateScanData(extraInfo);
             }
         }
         if(extraInfo.isEmpty() && !drone.getTurningStatus()){
