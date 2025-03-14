@@ -3,9 +3,6 @@ package ca.mcmaster.se2aa4.island.teamXXX;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import eu.ace_design.island.bot.IExplorerRaid;
-import org.json.JSONObject;
-import org.json.JSONTokener;
 
 //we should turn drone state into an interface with the different actions the drone can have
 //the We should also split move and changedirection methods into classes to adhere to SRP

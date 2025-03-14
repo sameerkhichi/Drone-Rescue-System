@@ -1,6 +1,6 @@
 package ca.mcmaster.se2aa4.island.teamXXX;
 
-//Class to store island details from drone exploration
+//Class to store island details from drone exploration and island details
 public class Island {
     
 

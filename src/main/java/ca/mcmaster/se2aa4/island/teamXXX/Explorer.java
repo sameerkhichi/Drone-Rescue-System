@@ -69,14 +69,6 @@ public class Explorer implements IExplorerRaid {
              * - Turn to the East and continue flying forwards until directly over ground
              */
 
-            /*
-             * Problem here:
-             * as is the drone will fly down and radar if nothing is found
-             * need to get the drone to turn back east and fly in that direction
-             * when something is detected there.
-             * This though just keeps flying down no matter what.
-             */
-
             // If the drone's radar detected ground
             if (drone_radar.getFound().equalsIgnoreCase("GROUND")) {
                 // If the drone is currently over ground, scan
