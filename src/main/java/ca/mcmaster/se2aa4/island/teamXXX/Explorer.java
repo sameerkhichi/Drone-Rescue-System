@@ -21,6 +21,7 @@ public class Explorer implements IExplorerRaid {
     private Radar drone_radar;
     private PhotoScanner drone_scanner;
     private DroneSearchMode droneSearchMode;
+    private DroneSearchMode searchStatus = null;
 
     @Override
     public void initialize(String s) {
@@ -55,6 +56,7 @@ public class Explorer implements IExplorerRaid {
         }
 
         if (droneSearchMode == DroneSearchMode.START) {
+            //changing the heading is costly, so we want to avoid doing this too much
             decision.put("action", "heading"); //change direction to south to start
             drone.changeDirection("R"); 
             headingParams.put("direction", drone.getHeading()); 
@@ -108,13 +110,75 @@ public class Explorer implements IExplorerRaid {
             /*
              * Strategy:
              * - Navigate drone around coastline to find creeks
+             * when you scan and there are more than one biomes (something and ocean)
+             * go down one row and start scanning that otherwise youll lose the island
              */
 
             // PUT ACTIONS HERE
-            decision.put("action", "stop"); // placeholder
+            //if its on the right turn right twice 
+            if((drone_scanner.endOfIsland() && drone.getHeading().equalsIgnoreCase("E")) || searchStatus == DroneSearchMode.RIGHT_SIDE_TURN){
+                //initiating the turning around sequence
+                decision.put("action", "heading");
+                drone.changeDirection("R"); 
+                headingParams.put("direction", drone.getHeading()); 
+                decision.put("parameters", headingParams);
+
+                //found a bug here, if you put another action for heading in here it will turn twice weirdly, could you use to search for the site
+                if(searchStatus == DroneSearchMode.RIGHT_SIDE_TURN){
+                    searchStatus = null;
+                }
+                else{
+                    searchStatus = DroneSearchMode.RIGHT_SIDE_TURN;
+                }
+            }
+
+            //if its on the left turn left twice
+
+            /*
+             * WHAT THE PROBLEM IS:
+             * it thinks when it gets to the left side of the island initially it wants to turn around
+             * Obviously it should so it needs to move onto the island before being allowed to turn around
+             * my dumbass made it worse when i tried fixing it
+             * this logic will basically search left to right going row by row alternating between scanning and flying (scans each square)
+             * ALL YOU NEED TO DO IS FIX THE ISSUE WHERE IT GETS STUCK TURNING A BUNCH WHEN IT INITIALLY FINDS THE ISLAND
+             * try running this garbage to see what i mean.
+             */
+
+
+            if((drone_scanner.endOfIsland() && drone.getHeading().equalsIgnoreCase("W")) || searchStatus == DroneSearchMode.LEFT_SIDE_TURN){
+                //here is where you need to turn around, remember turning moves the plane forward, so it will automatically go down one.
+                decision.put("action", "heading");
+                drone.changeDirection("L"); 
+                headingParams.put("direction", drone.getHeading()); 
+                decision.put("parameters", headingParams);
+
+                if(searchStatus == DroneSearchMode.LEFT_SIDE_TURN){
+                    searchStatus = null;
+                }
+                else{
+                    searchStatus = DroneSearchMode.LEFT_SIDE_TURN;
+                }
+            }
+
+            else if(searchStatus == DroneSearchMode.CREEK_SEARCH){
+                decision.put("action", "scan");
+                searchStatus = null;
+            }
+
+            else if(searchStatus == null){
+                decision.put("action", "fly");
+                drone.move();
+                logger.info("Drone is located at x: {}, y: {}", drone.getX(), drone.getY());
+                searchStatus = DroneSearchMode.CREEK_SEARCH;
+            }
+
+        }
+        //maybe you could do this first, and you may find a creek in the process
+        else if(droneSearchMode == DroneSearchMode.FIND_SITE){
 
         }
         else if (droneSearchMode == DroneSearchMode.OFF) {
+            logger.info("Drone has run out of battery!");
             decision.put("action", "stop"); // we stop the exploration immediately
         }
         
@@ -135,7 +199,7 @@ public class Explorer implements IExplorerRaid {
         logger.info("The status of the drone is {}", status);
 
         JSONObject extraInfo = response.getJSONObject("extras");
-        logger.info("Additional information received: {}", extraInfo);
+        logger.info("Additional information received: {}\n", extraInfo);
 
         //deplete the drone battery by the cost
         drone.updateBatteryLife(cost); 
