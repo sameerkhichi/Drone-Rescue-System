@@ -8,11 +8,10 @@ import java.io.StringReader;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.json.JSONArray;
 import org.json.JSONObject; 
 import org.json.JSONTokener;
 
-import eu.ace_design.island.bot.IExplorerRaid; //game engine
+import eu.ace_design.island.bot.IExplorerRaid;
 
 public class Explorer implements IExplorerRaid {
 
@@ -22,6 +21,7 @@ public class Explorer implements IExplorerRaid {
     private PhotoScanner drone_scanner;
     private DroneSearchMode droneSearchMode;
     private DroneSearchMode searchStatus = null;
+    private int flyCounter = 0;
 
     @Override
     public void initialize(String s) {
@@ -116,21 +116,29 @@ public class Explorer implements IExplorerRaid {
 
             // PUT ACTIONS HERE
             //if its on the right turn right twice 
-            if((drone_scanner.endOfIsland() && drone.getHeading().equalsIgnoreCase("E")) || searchStatus == DroneSearchMode.RIGHT_SIDE_TURN){
-                //initiating the turning around sequence
-                decision.put("action", "heading");
-                drone.changeDirection("R"); 
-                headingParams.put("direction", drone.getHeading()); 
-                decision.put("parameters", headingParams);
 
-                //found a bug here, if you put another action for heading in here it will turn twice weirdly, could you use to search for the site
-                if(searchStatus == DroneSearchMode.RIGHT_SIDE_TURN){
-                    searchStatus = null;
-                }
-                else{
-                    searchStatus = DroneSearchMode.RIGHT_SIDE_TURN;
+            logger.info("THIS IS THE FLYCOUNTER: " + flyCounter);
+            if(flyCounter > 5){ 
+                // had to add this counter to prevent turning of drone at first instance of finding the island. This forces drone to move at least 5 spaces before checking endofisland
+                // note still getting a "Cannot turn [SOUTH] when heading [SOUTH]" error
+                
+                if((drone_scanner.endOfIsland() && drone.getHeading().equalsIgnoreCase("E")) || searchStatus == DroneSearchMode.RIGHT_SIDE_TURN){
+                    //initiating the turning around sequence
+                    decision.put("action", "heading");
+                    drone.changeDirection("R"); 
+                    headingParams.put("direction", drone.getHeading()); 
+                    decision.put("parameters", headingParams);
+    
+                    //found a bug here, if you put another action for heading in here it will turn twice weirdly, could you use to search for the site
+                    if(searchStatus == DroneSearchMode.RIGHT_SIDE_TURN){
+                        searchStatus = null;
+                    }
+                    else{
+                        searchStatus = DroneSearchMode.RIGHT_SIDE_TURN;
+                    }
                 }
             }
+            
 
             //if its on the left turn left twice
 
@@ -170,6 +178,8 @@ public class Explorer implements IExplorerRaid {
                 drone.move();
                 logger.info("Drone is located at x: {}, y: {}", drone.getX(), drone.getY());
                 searchStatus = DroneSearchMode.CREEK_SEARCH;
+                logger.info("FOUND ISLAND, NOW WE ARE TRYING TO FLY ACROSS");
+                flyCounter++;
             }
 
         }
