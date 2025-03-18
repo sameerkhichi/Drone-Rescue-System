@@ -114,9 +114,17 @@ public class Explorer implements IExplorerRaid {
              * go down one row and start scanning that otherwise youll lose the island
              */
 
-            // PUT ACTIONS HERE
-            //if its on the right turn right twice 
+            /*
+             * NEXT STEPS
+             * -find a way to count if we get OCEAN multiple times then turn around instead of checking if ocean is mixed with something else
+             * -the above might fix the weird error where it skips an entire row for whatever reason - check SVG file
+             * -store the creek location to the Island class - implement a checker for it 
+             * -clean this class up - make abstractions and other classes for the search algorithm
+             * PLEASE ADD THESE TO THE KANBAN BOARD WHEN YOU DO THEM
+             * 
+             */
 
+            //RIGHT SIDE OF THE ISLAND LOGIC
             logger.info("THIS IS THE FLYCOUNTER: " + flyCounter);
             if(flyCounter > 5){ 
                 // had to add this counter to prevent turning of drone at first instance of finding the island. This forces drone to move at least 5 spaces before checking endofisland
@@ -127,6 +135,7 @@ public class Explorer implements IExplorerRaid {
                     drone_scanner.forceBiomesEmpty();
                 }
 
+                //if its on the right turn right twice 
                 if((drone_scanner.endOfIsland() && drone.getHeading().equalsIgnoreCase("E")) || searchStatus == SearchStatus.RIGHT_SIDE_TURN){
                     logger.info("I made it in here");
                     //initiating the turning around sequence
@@ -135,7 +144,6 @@ public class Explorer implements IExplorerRaid {
                     headingParams.put("direction", drone.getHeading()); 
                     decision.put("parameters", headingParams);
     
-                    //found a bug here, if you put another action for heading in here it will turn twice weirdly, could you use to search for the site
                     //may not need these because of the below else if statement - test it out - same case in the other one too
                     if(searchStatus == SearchStatus.RIGHT_SIDE_TURN){
                         searchStatus = null;
@@ -143,9 +151,10 @@ public class Explorer implements IExplorerRaid {
                     else{
                         searchStatus = SearchStatus.RIGHT_SIDE_TURN;
                     }
+                    return decision.toString(); //MUST USE THIS HERE TO BREAK THIS IF STATEMENT CHAIN OR ELSE IT WILL BREAK THE PROGRAM
                 }
-
-                else if(drone.getHeading().equalsIgnoreCase("S")){
+                //you need the >15 otherwise its gonna trigger this when its turning on the left side
+                else if(drone.getHeading().equalsIgnoreCase("S") && drone.getX() > 15){
                     decision.put("action", "heading");
                     drone.changeDirection("R");
                     logger.info("this one");
@@ -157,6 +166,8 @@ public class Explorer implements IExplorerRaid {
 
             }
             
+            //LEFT SIDE OF THE ISLAND LOGIC
+            //same case as the other one but for the case on the left side
             if(drone.getHeading().equalsIgnoreCase("S")){
                 drone_scanner.forceBiomesEmpty();
                 searchStatus = SearchStatus.OFF;
@@ -170,6 +181,7 @@ public class Explorer implements IExplorerRaid {
                 headingParams.put("direction", drone.getHeading()); 
                 decision.put("parameters", headingParams);
 
+                //again not sure if we need these - may want to test and remove if not needed.
                 if(searchStatus == SearchStatus.LEFT_SIDE_TURN){
                     searchStatus = null;
                 }
@@ -177,8 +189,19 @@ public class Explorer implements IExplorerRaid {
                     searchStatus = SearchStatus.LEFT_SIDE_TURN;
                 }
             }
+            //will only trigger this if its to the left of the middle of the island
+            else if(drone.getHeading().equalsIgnoreCase("S") && drone.getX() < 15){
+                decision.put("action", "heading");
+                drone.changeDirection("L");
+                logger.info("this onex2");
+                headingParams.put("direction", drone.getHeading());
+                decision.put("parameters", headingParams);
+                searchStatus = SearchStatus.CREEK_SEARCH;
+                return decision.toString(); //force drone to process this before being able to make another action.
+            }
 
 
+            //THESE TWO ELSE IF'S LOOP TO SCAN EACH SQUARE IN THAT ROW
             else if(searchStatus == SearchStatus.CREEK_SEARCH){
                 decision.put("action", "scan");
                 searchStatus = null;
@@ -194,10 +217,13 @@ public class Explorer implements IExplorerRaid {
             }
 
         }
+
         //maybe you could do this first, and you may find a creek in the process
         else if(droneSearchMode == DroneSearchMode.FIND_SITE){
 
         }
+
+        //when the drone dies
         else if (droneSearchMode == DroneSearchMode.OFF) {
             logger.info("Drone has run out of battery!");
             decision.put("action", "stop"); // we stop the exploration immediately
