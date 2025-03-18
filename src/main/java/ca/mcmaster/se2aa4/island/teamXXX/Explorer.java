@@ -49,7 +49,6 @@ public class Explorer implements IExplorerRaid {
         JSONObject decision = new JSONObject();
         JSONObject headingParams = new JSONObject();
         JSONObject radarParams = new JSONObject();
-        JSONObject flyOnce = new JSONObject();
 
         // Stops search if the drone ran out of battery
         if (drone.getBattery() <= 0) {
@@ -133,9 +132,6 @@ public class Explorer implements IExplorerRaid {
                     //found a bug here, if you put another action for heading in here it will turn twice weirdly, could you use to search for the site
                     if(searchStatus == SearchStatus.RIGHT_SIDE_TURN){
                         searchStatus = null;
-                        flyOnce.put("action", "fly");
-                        drone.move();
-                        logger.info("Drone is located at x: {}, y: {}", drone.getX(), drone.getY());
                     }
                     else{
                         searchStatus = SearchStatus.RIGHT_SIDE_TURN;
@@ -166,9 +162,6 @@ public class Explorer implements IExplorerRaid {
 
                 if(searchStatus == SearchStatus.LEFT_SIDE_TURN){
                     searchStatus = null;
-                    flyOnce.put("action", "fly");
-                    drone.move();
-                    logger.info("Drone is located at x: {}, y: {}", drone.getX(), drone.getY());
                 }
                 else{
                     searchStatus = SearchStatus.LEFT_SIDE_TURN;
