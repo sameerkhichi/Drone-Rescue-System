@@ -20,7 +20,7 @@ public class Explorer implements IExplorerRaid {
     private Radar drone_radar;
     private PhotoScanner drone_scanner;
     private DroneSearchMode droneSearchMode;
-    private DroneSearchMode searchStatus = null;
+    private SearchStatus searchStatus = null;
     private int flyCounter = 0;
 
     @Override
@@ -49,6 +49,7 @@ public class Explorer implements IExplorerRaid {
         JSONObject decision = new JSONObject();
         JSONObject headingParams = new JSONObject();
         JSONObject radarParams = new JSONObject();
+        JSONObject flyOnce = new JSONObject();
 
         // Stops search if the drone ran out of battery
         if (drone.getBattery() <= 0) {
@@ -122,7 +123,7 @@ public class Explorer implements IExplorerRaid {
                 // had to add this counter to prevent turning of drone at first instance of finding the island. This forces drone to move at least 5 spaces before checking endofisland
                 // note still getting a "Cannot turn [SOUTH] when heading [SOUTH]" error
                 
-                if((drone_scanner.endOfIsland() && drone.getHeading().equalsIgnoreCase("E")) || searchStatus == DroneSearchMode.RIGHT_SIDE_TURN){
+                if((drone_scanner.endOfIsland() && drone.getHeading().equalsIgnoreCase("E")) || searchStatus == SearchStatus.RIGHT_SIDE_TURN){
                     //initiating the turning around sequence
                     decision.put("action", "heading");
                     drone.changeDirection("R"); 
@@ -130,11 +131,14 @@ public class Explorer implements IExplorerRaid {
                     decision.put("parameters", headingParams);
     
                     //found a bug here, if you put another action for heading in here it will turn twice weirdly, could you use to search for the site
-                    if(searchStatus == DroneSearchMode.RIGHT_SIDE_TURN){
+                    if(searchStatus == SearchStatus.RIGHT_SIDE_TURN){
                         searchStatus = null;
+                        flyOnce.put("action", "fly");
+                        drone.move();
+                        logger.info("Drone is located at x: {}, y: {}", drone.getX(), drone.getY());
                     }
                     else{
-                        searchStatus = DroneSearchMode.RIGHT_SIDE_TURN;
+                        searchStatus = SearchStatus.RIGHT_SIDE_TURN;
                     }
                 }
             }
@@ -153,22 +157,25 @@ public class Explorer implements IExplorerRaid {
              */
 
 
-            if((drone_scanner.endOfIsland() && drone.getHeading().equalsIgnoreCase("W")) || searchStatus == DroneSearchMode.LEFT_SIDE_TURN){
+            if((drone_scanner.endOfIsland() && drone.getHeading().equalsIgnoreCase("W")) || searchStatus == SearchStatus.LEFT_SIDE_TURN){
                 //here is where you need to turn around, remember turning moves the plane forward, so it will automatically go down one.
                 decision.put("action", "heading");
                 drone.changeDirection("L"); 
                 headingParams.put("direction", drone.getHeading()); 
                 decision.put("parameters", headingParams);
 
-                if(searchStatus == DroneSearchMode.LEFT_SIDE_TURN){
+                if(searchStatus == SearchStatus.LEFT_SIDE_TURN){
                     searchStatus = null;
+                    flyOnce.put("action", "fly");
+                    drone.move();
+                    logger.info("Drone is located at x: {}, y: {}", drone.getX(), drone.getY());
                 }
                 else{
-                    searchStatus = DroneSearchMode.LEFT_SIDE_TURN;
+                    searchStatus = SearchStatus.LEFT_SIDE_TURN;
                 }
             }
 
-            else if(searchStatus == DroneSearchMode.CREEK_SEARCH){
+            else if(searchStatus == SearchStatus.CREEK_SEARCH){
                 decision.put("action", "scan");
                 searchStatus = null;
             }
@@ -177,7 +184,7 @@ public class Explorer implements IExplorerRaid {
                 decision.put("action", "fly");
                 drone.move();
                 logger.info("Drone is located at x: {}, y: {}", drone.getX(), drone.getY());
-                searchStatus = DroneSearchMode.CREEK_SEARCH;
+                searchStatus = SearchStatus.CREEK_SEARCH;
                 logger.info("FOUND ISLAND, NOW WE ARE TRYING TO FLY ACROSS");
                 flyCounter++;
             }
