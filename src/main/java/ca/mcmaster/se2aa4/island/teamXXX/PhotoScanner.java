@@ -41,7 +41,12 @@ public class PhotoScanner {
 
     //check for if theres more than one biome in the array returned
     public boolean endOfIsland(){
-        return ((biomes.length() > 1) && hasOcean());
+        if(this.biomes == null){
+            return false;
+        }
+        else{
+            return ((biomes.length() > 1) && hasOcean());
+        }
     }
 
     //helper - forces the biomes to show up as empty

@@ -122,7 +122,13 @@ public class Explorer implements IExplorerRaid {
                 // had to add this counter to prevent turning of drone at first instance of finding the island. This forces drone to move at least 5 spaces before checking endofisland
                 // note still getting a "Cannot turn [SOUTH] when heading [SOUTH]" error
                 
+                //This stops the drone from trying to turn too many times by forcing biomes to be empty 
+                if(drone.getHeading().equalsIgnoreCase("S")){
+                    drone_scanner.forceBiomesEmpty();
+                }
+
                 if((drone_scanner.endOfIsland() && drone.getHeading().equalsIgnoreCase("E")) || searchStatus == SearchStatus.RIGHT_SIDE_TURN){
+                    logger.info("I made it in here");
                     //initiating the turning around sequence
                     decision.put("action", "heading");
                     drone.changeDirection("R"); 
@@ -137,22 +143,16 @@ public class Explorer implements IExplorerRaid {
                         searchStatus = SearchStatus.RIGHT_SIDE_TURN;
                     }
                 }
+                
+
             }
             
+            if(drone.getHeading().equalsIgnoreCase("S")){
+                drone_scanner.forceBiomesEmpty();
+                searchStatus = SearchStatus.OFF;
+            }
 
             //if its on the left turn left twice
-
-            /*
-             * WHAT THE PROBLEM IS:
-             * it thinks when it gets to the left side of the island initially it wants to turn around
-             * Obviously it should so it needs to move onto the island before being allowed to turn around
-             * my dumbass made it worse when i tried fixing it
-             * this logic will basically search left to right going row by row alternating between scanning and flying (scans each square)
-             * ALL YOU NEED TO DO IS FIX THE ISSUE WHERE IT GETS STUCK TURNING A BUNCH WHEN IT INITIALLY FINDS THE ISLAND
-             * try running this garbage to see what i mean.
-             */
-
-
             if((drone_scanner.endOfIsland() && drone.getHeading().equalsIgnoreCase("W")) || searchStatus == SearchStatus.LEFT_SIDE_TURN){
                 //here is where you need to turn around, remember turning moves the plane forward, so it will automatically go down one.
                 decision.put("action", "heading");
