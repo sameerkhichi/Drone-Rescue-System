@@ -65,13 +65,16 @@ public class DroneState {
         }
 
         //this will set the direction to the right value if it turns left or right from where it currently is
+        //remember the drone moves forward before turning and also once after. - refer to assignment picture
         if(nextDirection.equalsIgnoreCase("L")){
             move();
             updateHeading(directions[((directionIndex+3)%4)]);
+            move();
         }
         else if(nextDirection.equalsIgnoreCase("R")){
-            move();
+            move(); 
             updateHeading(directions[((directionIndex+1)%4)]);
+            move();
         }
         
         droneLogger.info("Turning from facing {}, to {}", prevHeading, getHeading());

@@ -120,7 +120,7 @@ public class Explorer implements IExplorerRaid {
             logger.info("THIS IS THE FLYCOUNTER: " + flyCounter);
             if(flyCounter > 5){ 
                 // had to add this counter to prevent turning of drone at first instance of finding the island. This forces drone to move at least 5 spaces before checking endofisland
-                // note still getting a "Cannot turn [SOUTH] when heading [SOUTH]" error
+              
                 
                 //This stops the drone from trying to turn too many times by forcing biomes to be empty 
                 if(drone.getHeading().equalsIgnoreCase("S")){
@@ -136,6 +136,7 @@ public class Explorer implements IExplorerRaid {
                     decision.put("parameters", headingParams);
     
                     //found a bug here, if you put another action for heading in here it will turn twice weirdly, could you use to search for the site
+                    //may not need these because of the below else if statement - test it out - same case in the other one too
                     if(searchStatus == SearchStatus.RIGHT_SIDE_TURN){
                         searchStatus = null;
                     }
@@ -143,12 +144,15 @@ public class Explorer implements IExplorerRaid {
                         searchStatus = SearchStatus.RIGHT_SIDE_TURN;
                     }
                 }
+
                 else if(drone.getHeading().equalsIgnoreCase("S")){
                     decision.put("action", "heading");
                     drone.changeDirection("R");
                     logger.info("this one");
                     headingParams.put("direction", drone.getHeading());
                     decision.put("parameters", headingParams);
+                    searchStatus = SearchStatus.CREEK_SEARCH;
+                    return decision.toString(); //force drone to process this before being able to make another action.
                 }
 
             }

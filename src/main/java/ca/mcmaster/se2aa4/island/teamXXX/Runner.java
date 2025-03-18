@@ -13,7 +13,7 @@ public class Runner {
                     .exploring(new File(filename))
                     .withSeed(42L)
                     .startingAt(39, 27, "EAST")
-                    .backBefore(300) //7000 originally
+                    .backBefore(400) //7000 originally
                     .withCrew(5)
                     .collecting(1000, "WOOD")
                     .storingInto("./outputs")
