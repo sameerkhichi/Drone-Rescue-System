@@ -143,7 +143,13 @@ public class Explorer implements IExplorerRaid {
                         searchStatus = SearchStatus.RIGHT_SIDE_TURN;
                     }
                 }
-                
+                else if(drone.getHeading().equalsIgnoreCase("S")){
+                    decision.put("action", "heading");
+                    drone.changeDirection("R");
+                    logger.info("this one");
+                    headingParams.put("direction", drone.getHeading());
+                    decision.put("parameters", headingParams);
+                }
 
             }
             
@@ -167,6 +173,7 @@ public class Explorer implements IExplorerRaid {
                     searchStatus = SearchStatus.LEFT_SIDE_TURN;
                 }
             }
+
 
             else if(searchStatus == SearchStatus.CREEK_SEARCH){
                 decision.put("action", "scan");
