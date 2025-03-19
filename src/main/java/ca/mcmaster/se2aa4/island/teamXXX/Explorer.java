@@ -22,6 +22,7 @@ public class Explorer implements IExplorerRaid {
     private DroneSearchMode droneSearchMode;
     private SearchStatus searchStatus = null;
     private int flyCounter = 0;
+    private int OceanCounter = 0;
 
     @Override
     public void initialize(String s) {
@@ -205,6 +206,18 @@ public class Explorer implements IExplorerRaid {
             else if(searchStatus == SearchStatus.CREEK_SEARCH){
                 decision.put("action", "scan");
                 searchStatus = null;
+                
+                // this fixes the issue where the drone goes into the ocean and doesnt turn
+                if(drone.getHeading().equalsIgnoreCase("W")){
+                    if(drone_scanner.hasOcean()){
+                        OceanCounter++;
+                    }
+                    logger.info("THIS IS THE OCEAN COUNTER " + OceanCounter);
+                    if(OceanCounter > 1){
+                        searchStatus = SearchStatus.LEFT_SIDE_TURN;
+                    }
+                }
+                
             }
 
             else if(searchStatus == null){
