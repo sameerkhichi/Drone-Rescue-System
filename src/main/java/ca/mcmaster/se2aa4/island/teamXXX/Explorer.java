@@ -22,11 +22,6 @@ public class Explorer implements IExplorerRaid {
     private DroneSearchMode droneSearchMode;
     private SearchAlgorithm searchAlgorithm;
     private IslandSearch islandSearch;
-    /*
-    private SearchStatus searchStatus = null;
-    private int flyCounter = 0;
-    private int OceanCounter = 0;
-    */
 
     @Override
     public void initialize(String s) {
@@ -54,8 +49,6 @@ public class Explorer implements IExplorerRaid {
     public String takeDecision() {
         //create json objects for each action you would be doing
         JSONObject decision = new JSONObject();
-        JSONObject headingParams = new JSONObject();
-        JSONObject radarParams = new JSONObject();
 
         // Stops search if the drone ran out of battery
         if (drone.getBattery() <= 0) {
