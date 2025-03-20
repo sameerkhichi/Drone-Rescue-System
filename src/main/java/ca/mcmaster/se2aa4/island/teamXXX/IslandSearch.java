@@ -20,7 +20,6 @@ public class IslandSearch{
         this.drone_radar = drone_radar;
     }   
 
-
     public JSONObject getNextMove(){
 
         decision = new JSONObject();
@@ -33,39 +32,14 @@ public class IslandSearch{
         * - Turn to the East and continue flying forwards until directly over ground
         */
 
-        // If the drone's radar detected ground
-        if (drone_radar.getFound().equalsIgnoreCase("GROUND")) {
-            // If the drone is currently over ground, scan
-            if (drone_radar.getRange() == 0) {
-                decision.put("action", "scan");
-                droneSearchMode = DroneSearchMode.FIND_CREEK; // Change to find creek mode once island is found
-            }
-            //if the drone is still heading south after finding land to the east
-            else if (drone.getHeading().equalsIgnoreCase("S")) {
-                drone.setTurningStatus(true);
+        /*
+         * CURRENT PROBLEM
+         * when the drone turns east to fly towards the island it moves one down - you need to adjust for this.
+         * Fly one more time south - turn east - then turn north - then turn east again.
+         */
 
-                //turning back towards the east and fly that way
-                decision.put("action", "heading");
-                drone.changeDirection("L"); 
-                headingParams.put("direction", drone.getHeading()); 
-                decision.put("parameters", headingParams);
-            }
-            else {
-                //finished the turn start flying east
-                drone.setTurningStatus(false);
-                decision.put("action", "fly"); //fly forward
-                drone.move(); //this method is from the DroneState Class basically makes the drone move
-                islandLogger.info("Drone is located at x: {}, y: {}", drone.getX(), drone.getY());
-                islandLogger.debug(drone.getBattery());
-            }
-        }
-        else {
-            // doing the radar part here:
-            decision.put("action", "echo");
-            radarParams.put("direction", "E"); // change the heading to scan on the left and right of the wings
-            decision.put("parameters", radarParams);
-            islandLogger.info("Drone is scanning in direction: {}", radarParams);
-        }
+        
+        
 
 
         return decision;
@@ -77,6 +51,21 @@ public class IslandSearch{
             return true;
         }
         return false;
+    }
+
+    public JSONObject initiateGroundSearch(){
+
+        decision = new JSONObject();
+        headingParams = new JSONObject();
+
+        //changing the heading is costly, so we want to avoid doing this too much
+        decision.put("action", "heading"); //change direction to south to start
+        drone.changeDirection("R"); 
+        headingParams.put("direction", drone.getHeading()); 
+        decision.put("parameters", headingParams); //cant pass string in here must be JSON object - use wrapper JSON
+        droneSearchMode = DroneSearchMode.FIND_GROUND; // change to find ground mode
+
+        return decision;
     }
 
 

@@ -63,12 +63,9 @@ public class Explorer implements IExplorerRaid {
         }
 
         if (droneSearchMode == DroneSearchMode.START) {
-            //changing the heading is costly, so we want to avoid doing this too much
-            decision.put("action", "heading"); //change direction to south to start
-            drone.changeDirection("R"); 
-            headingParams.put("direction", drone.getHeading()); 
-            decision.put("parameters", headingParams); //cant pass string in here must be JSON object - use wrapper JSON
-            droneSearchMode = DroneSearchMode.FIND_GROUND; // change to find ground mode
+            //turn to the south and then initiate the ground search
+            decision = islandSearch.initiateGroundSearch();
+            droneSearchMode = DroneSearchMode.FIND_GROUND;
         } 
         else if (droneSearchMode == DroneSearchMode.FIND_GROUND) {
             
