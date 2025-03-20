@@ -7,16 +7,19 @@ public class Radar {
     private final Logger logger = LogManager.getLogger();
     private int range;
     private String found;
+    private boolean echoUsed;
 
     public Radar(){
         this.range = -1;
         this.found = "Unknown";
+        this.echoUsed = false;
     }
 
     public void updateRadarData(JSONObject extras){
         this.range = extras.getInt("range");
         this.found = extras.getString("found");
         logger.debug("Radar scan results: {} found at range {}", found, range);
+        this.echoUsed = true;
     }
     
     public int getRange(){
@@ -36,4 +39,18 @@ public class Radar {
         this.range = -1;
     }
 
+    public boolean hasGroundAhead() {
+        if (found.equalsIgnoreCase("GROUND")) {
+            return true;
+        }
+        return false;
+    }
+
+    public boolean echoLastUsed() {
+        return echoUsed;
+    }
+
+    public void resetEchoUsage() {
+        echoUsed = false;
+    }
 }

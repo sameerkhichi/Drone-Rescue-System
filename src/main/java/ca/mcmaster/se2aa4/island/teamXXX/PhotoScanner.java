@@ -6,6 +6,7 @@ public class PhotoScanner {
     private JSONArray biomes;
     private JSONArray creeks;
     private JSONArray sites;
+    private boolean scannedTile;
 
     public PhotoScanner() {
         this.biomes = null;
@@ -17,8 +18,10 @@ public class PhotoScanner {
         biomes = extraInfo.getJSONArray("biomes");
         creeks = extraInfo.getJSONArray("creeks");
         sites = extraInfo.getJSONArray("sites");
+        scannedTile = true;
     }
 
+    // Checks if Ocean is one of the biomes
     public boolean hasOcean() {
         if (biomes == null) {
             return false;
@@ -27,6 +30,14 @@ public class PhotoScanner {
             if (biomes.getString(i).equals("OCEAN")) {
                 return true;
             }
+        }
+        return false;
+    }
+
+    // Checks if the only biome is Ocean
+    public boolean hasOceanOnly() {
+        if ((biomes.length() == 1) && (biomes.getString(0).equals("OCEAN"))) {
+            return true;
         }
         return false;
     }
@@ -52,6 +63,16 @@ public class PhotoScanner {
     //helper - forces the biomes to show up as empty
     public void forceBiomesEmpty(){
         this.biomes = null;
+    }
+
+    // Used to check if the current tile has already been scanned
+    public boolean isTileScanned() {
+        return scannedTile;
+    }
+
+    // Resets the scan status of the tile
+    public void resetScannedTile() {
+        scannedTile = false;
     }
 
 }

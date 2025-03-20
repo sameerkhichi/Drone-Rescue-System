@@ -20,9 +20,16 @@ public class Explorer implements IExplorerRaid {
     private Radar drone_radar;
     private PhotoScanner drone_scanner;
     private DroneSearchMode droneSearchMode;
+    /*
     private SearchStatus searchStatus = null;
     private int flyCounter = 0;
     private int OceanCounter = 0;
+    */
+    private ScanStage scanStage;
+    private ScanState scanState;
+    private ScanDirection scanDirection;
+    private UTurnDirection uTurnDirection;
+    private int uTurnCounter;
 
     @Override
     public void initialize(String s) {
@@ -41,6 +48,11 @@ public class Explorer implements IExplorerRaid {
         drone_radar = new Radar();
         drone_scanner = new PhotoScanner();
         droneSearchMode = DroneSearchMode.START;
+
+        // Initialize for use in creek finding strategy
+        scanStage = ScanStage.PRE_SCAN;
+        scanState = ScanState.LINE_SCAN;
+        scanDirection = ScanDirection.SCAN_DOWN;
     }
 
     //use this method to call a specific request to the drone
@@ -77,7 +89,6 @@ public class Explorer implements IExplorerRaid {
                 // If the drone is currently over ground, scan
                 if (drone_radar.getRange() == 0) {
                     decision.put("action", "scan");
-                    //drone_radar.resetRange(); // resets range so that drone is able to fly again
                     droneSearchMode = DroneSearchMode.FIND_CREEK; // Change to find creek mode once island is found
                 }
                 //if the drone is still heading south after finding land to the east
@@ -125,111 +136,114 @@ public class Explorer implements IExplorerRaid {
              * 
              */
 
-            //RIGHT SIDE OF THE ISLAND LOGIC
-            logger.info("THIS IS THE FLYCOUNTER: " + flyCounter);
-            if(flyCounter > 5){ 
-                // had to add this counter to prevent turning of drone at first instance of finding the island. This forces drone to move at least 5 spaces before checking endofisland
-              
-                
-                //This stops the drone from trying to turn too many times by forcing biomes to be empty 
-                if(drone.getHeading().equalsIgnoreCase("S")){
-                    drone_scanner.forceBiomesEmpty();
-                }
-
-                //if its on the right turn right twice 
-                if((drone_scanner.endOfIsland() && drone.getHeading().equalsIgnoreCase("E")) || searchStatus == SearchStatus.RIGHT_SIDE_TURN){
-                    logger.info("I made it in here");
-                    //initiating the turning around sequence
-                    decision.put("action", "heading");
-                    drone.changeDirection("R"); 
-                    headingParams.put("direction", drone.getHeading()); 
-                    decision.put("parameters", headingParams);
-    
-                    //may not need these because of the below else if statement - test it out - same case in the other one too
-                    if(searchStatus == SearchStatus.RIGHT_SIDE_TURN){
-                        searchStatus = null;
+            if (scanState == ScanState.LINE_SCAN) {
+                if (scanStage == ScanStage.PRE_SCAN) {
+                    if (!drone_radar.echoLastUsed()) {
+                        decision.put("action", "echo");
+                        radarParams.put("direction", drone.getHeading());
+                        decision.put("parameters", radarParams);
+                        logger.info("Drone is scanning in direction: {}", radarParams);
+                    } else {
+                        if (drone_radar.hasGroundAhead()) {
+                            if (drone_radar.getRange() == 0) {
+                                decision.put("action", "scan");
+                                scanStage = ScanStage.SCAN;
+                            } else {
+                                decision.put("action", "fly");
+                                drone.move();
+                                logger.info("Drone is located at x: {}, y: {}", drone.getX(), drone.getY());
+                            }
+                        } else {
+                            // END OF ISLAND LOGIC GOES HERE
+                            decision.put("action", "stop"); // Temporary
+                        }
+                        drone_radar.resetEchoUsage();
                     }
-                    else{
-                        searchStatus = SearchStatus.RIGHT_SIDE_TURN;
+                } else if (scanStage == ScanStage.SCAN) {
+                    if (drone_scanner.hasOceanOnly()) {
+                        decision.put("action", "echo");
+                        radarParams.put("direction", drone.getHeading());
+                        decision.put("parameters", radarParams);
+                        logger.info("Drone is scanning in direction: {}", radarParams);
+                        scanStage = ScanStage.POST_SCAN;
+                    } else {
+                        // If the tile is already scanned, fly forwards
+                        if (drone_scanner.isTileScanned()) {
+                            decision.put("action", "fly");
+                            drone_scanner.resetScannedTile(); // Move to a new, unscanned tile
+                            drone.move();
+                            logger.info("Drone is located at x: {}, y: {}", drone.getX(), drone.getY());
+                        } else {
+                            decision.put("action", "scan");
+                        }
                     }
-                    return decision.toString(); //MUST USE THIS HERE TO BREAK THIS IF STATEMENT CHAIN OR ELSE IT WILL BREAK THE PROGRAM
+                } else { // if scanStage == ScanStage.POST_SCAN
+                    if (drone_radar.echoLastUsed()) {
+                        if (!drone_radar.hasGroundAhead()) { // if echo is OUT OF BOUNDS (no ground found ahead), initiate U-Turn
+                            scanState = ScanState.U_TURN;
+                            uTurnCounter = 1;
+                            if (drone.getHeading().equals("E")) {
+                                if (scanDirection == ScanDirection.SCAN_DOWN) {
+                                    uTurnDirection = UTurnDirection.TURN_RIGHT;
+                                } else {
+                                    uTurnDirection = UTurnDirection.TURN_LEFT;
+                                }
+                            } else { // If heading West
+                                if (scanDirection == ScanDirection.SCAN_DOWN) {
+                                    uTurnDirection = UTurnDirection.TURN_LEFT;
+                                } else {
+                                    uTurnDirection = UTurnDirection.TURN_RIGHT;
+                                }
+                            }
+                        } else { // if echo found GROUND
+                            if (drone_radar.getRange() > 0) { // if not on top of GROUND
+                                decision.put("action", "fly");
+                                drone_scanner.resetScannedTile();
+                                drone.move();
+                                logger.info("Drone is located at x: {}, y: {}", drone.getX(), drone.getY());
+                            } else { // if on top of GROUND
+                                if (drone_scanner.isTileScanned() && drone_scanner.hasOceanOnly()) { // if tile is both OCEAN and GROUND
+                                    decision.put("action", "fly");
+                                    drone_scanner.resetScannedTile();
+                                    drone.move();
+                                    logger.info("Drone is located at x: {}, y: {}", drone.getX(), drone.getY());
+                                } else {
+                                    decision.put("action", "scan");
+                                    scanStage = ScanStage.SCAN;
+                                }
+                            }
+                        }
+                        drone_radar.resetEchoUsage();
+                    } else {
+                        decision.put("action", "echo");
+                        radarParams.put("direction", drone.getHeading());
+                        decision.put("parameters", radarParams);
+                        logger.info("Drone is scanning in direction: {}", radarParams);
+                    }
                 }
-                //you need the >15 otherwise its gonna trigger this when its turning on the left side
-                else if(drone.getHeading().equalsIgnoreCase("S") && drone.getX() > 15){
-                    decision.put("action", "heading");
-                    drone.changeDirection("R");
-                    logger.info("this one");
-                    headingParams.put("direction", drone.getHeading());
-                    decision.put("parameters", headingParams);
-                    searchStatus = SearchStatus.CREEK_SEARCH;
-                    return decision.toString(); //force drone to process this before being able to make another action.
-                }
-
-            }
-            
-            //LEFT SIDE OF THE ISLAND LOGIC
-            //same case as the other one but for the case on the left side
-            if(drone.getHeading().equalsIgnoreCase("S")){
-                drone_scanner.forceBiomesEmpty();
-                searchStatus = SearchStatus.OFF;
             }
 
-            //if its on the left turn left twice
-            if((drone_scanner.endOfIsland() && drone.getHeading().equalsIgnoreCase("W")) || searchStatus == SearchStatus.LEFT_SIDE_TURN){
-                //here is where you need to turn around, remember turning moves the plane forward, so it will automatically go down one.
+            if (scanState == ScanState.U_TURN) {
                 decision.put("action", "heading");
-                drone.changeDirection("L"); 
+
+                if (uTurnDirection == UTurnDirection.TURN_RIGHT) {
+                    drone.changeDirection("R");
+                } else {
+                    drone.changeDirection("L"); 
+                }
+
                 headingParams.put("direction", drone.getHeading()); 
                 decision.put("parameters", headingParams);
 
-                //again not sure if we need these - may want to test and remove if not needed.
-                if(searchStatus == SearchStatus.LEFT_SIDE_TURN){
-                    searchStatus = null;
+                if (uTurnCounter == 2) {
+                    scanState = ScanState.LINE_SCAN;
+                    scanStage = ScanStage.PRE_SCAN;
+                } else {
+                    uTurnCounter++;
                 }
-                else{
-                    searchStatus = SearchStatus.LEFT_SIDE_TURN;
-                }
             }
-            //will only trigger this if its to the left of the middle of the island
-            else if(drone.getHeading().equalsIgnoreCase("S") && drone.getX() < 15){
-                decision.put("action", "heading");
-                drone.changeDirection("L");
-                logger.info("this onex2");
-                headingParams.put("direction", drone.getHeading());
-                decision.put("parameters", headingParams);
-                searchStatus = SearchStatus.CREEK_SEARCH;
-                return decision.toString(); //force drone to process this before being able to make another action.
-            }
-
-
-            //THESE TWO ELSE IF'S LOOP TO SCAN EACH SQUARE IN THAT ROW
-            else if(searchStatus == SearchStatus.CREEK_SEARCH){
-                decision.put("action", "scan");
-                searchStatus = null;
-                
-                // this fixes the issue where the drone goes into the ocean and doesnt turn
-                if(drone.getHeading().equalsIgnoreCase("W")){
-                    if(drone_scanner.hasOcean()){
-                        OceanCounter++;
-                    }
-                    logger.info("THIS IS THE OCEAN COUNTER " + OceanCounter);
-                    if(OceanCounter > 1){
-                        searchStatus = SearchStatus.LEFT_SIDE_TURN;
-                    }
-                }
-                
-            }
-
-            else if(searchStatus == null){
-                decision.put("action", "fly");
-                drone.move();
-                logger.info("Drone is located at x: {}, y: {}", drone.getX(), drone.getY());
-                searchStatus = SearchStatus.CREEK_SEARCH;
-                logger.info("FOUND ISLAND, NOW WE ARE TRYING TO FLY ACROSS");
-                flyCounter++;
-            }
-
         }
+        
 
         //maybe you could do this first, and you may find a creek in the process
         else if(droneSearchMode == DroneSearchMode.FIND_SITE){
@@ -244,6 +258,7 @@ public class Explorer implements IExplorerRaid {
         
         logger.info("** Decision: {}",decision.toString());
         return decision.toString();
+    
     }
 
     @Override
