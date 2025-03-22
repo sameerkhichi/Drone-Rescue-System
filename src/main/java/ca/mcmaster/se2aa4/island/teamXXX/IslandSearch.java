@@ -49,6 +49,9 @@ public class IslandSearch{
             //if ground is found it should always enter this if statement
             groundPresent = IslandSearchStatus.GROUND_DETECTED;
 
+            // reset echo usage once ground was found
+            drone_radar.resetEchoUsage();
+
             //these if statements follow a chain - they execute one after the other using the enums
             if(islandSearchStatus == IslandSearchStatus.SETUP_FOR_TURN){
                 decision.put("action", "fly");
