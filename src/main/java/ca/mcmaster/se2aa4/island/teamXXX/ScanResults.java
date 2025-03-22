@@ -53,8 +53,8 @@ public class ScanResults {
 
     // NEW: Find the closest creek to the site
     public String getClosestCreek() {
-        if (!hasSite || creekLocations.isEmpty()) {
-            return "No site or creeks available.";
+        if (!hasSite) {
+            return "No site found";
         }
     
         double minDistance = Double.MAX_VALUE;

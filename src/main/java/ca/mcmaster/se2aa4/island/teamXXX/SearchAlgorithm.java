@@ -24,6 +24,7 @@ public class SearchAlgorithm {
     private JSONObject headingParams;
     private JSONObject radarParams;
 
+    // Constructor
     public SearchAlgorithm(DroneState drone, Radar drone_radar, PhotoScanner drone_scanner) {
         scanStage = ScanStage.PRE_SCAN;
         scanState = ScanState.LINE_SCAN;
@@ -36,13 +37,35 @@ public class SearchAlgorithm {
         continueFlying = false;
     }
 
+    /* 
+     * This method returns a JSONObject containing the instructions for the drone's next move
+     * 
+     * Overall Strategy:
+     * - Scan every other line on the way down
+     * - Scan the rest of the lines on the way up
+     */
     public JSONObject getNextMove() {
         decision = new JSONObject();
         headingParams = new JSONObject();
         radarParams = new JSONObject();
+
+        logger.info("SCAN DIRECTION: " + scanDirection);
         
+        // LINE_SCAN state handles the island scanning mechanism in a horizontal manner
+        /*
+         * State Strategy:
+         * - Pre-scan stage checks if there is ground ahead before scanning, flys towards ground if found
+         *      - Continues to scan stage once the drone is directly on top of ground
+         *      - Changes to end of island state if no ground is found ahead
+         * - Scan stage alternates between flying and scanning the ground
+         *      - If the drone is directly on top of a tile containing the ocean biome only, it transitions to the post-scan stage
+         * - Post-scan stage initiates a U-Turn if no more ground is found ahead
+         *      - Otherwise, it flys towards the ground and goes back to the scan stage once on top of ground
+         */
         if (scanState == ScanState.LINE_SCAN) {
+            logger.info("CURRENTLY IN LINE_SCAN STATE");
             if (scanStage == ScanStage.PRE_SCAN) {
+                logger.info("CURRENTLY IN PRE_SCAN STAGE");
                 if (!drone_radar.echoLastUsed()) {
                     decision.put("action", "echo");
                     radarParams.put("direction", drone.getHeading());
@@ -53,33 +76,39 @@ public class SearchAlgorithm {
                         if (drone_radar.getRange() == 0) {
                             decision.put("action", "scan");
                             scanStage = ScanStage.SCAN;
+                            logger.info("CHANGING TO SCAN STAGE");
                         } else { // fly towards land
                             decision.put("action", "fly");
                             drone.move();
                             currentFlyCounter++;
                             //logger.info("Drone is located at x: {}, y: {}", drone.getX(), drone.getY());
                         }
+                        drone_radar.resetEchoUsage();
                     } else {
                         // END OF ISLAND LOGIC GOES HERE
+                        logger.info("CHANGING TO END_OF_ISLAND STATE");
                         
                         scanState = ScanState.END_OF_ISLAND;
                         decision.put("action", "echo");
                         radarParams.put("direction", "N");
                         decision.put("parameters", radarParams);
                         
-                         // Temporary
                         endOfIslandDirection = drone.getHeading();
                         endOfIslandTurnCounter = 1;
                         continueFlying = false;
+
+                        drone_radar.resetEchoUsage();
+                        return decision;
                     }
-                    drone_radar.resetEchoUsage();
                 }
             } else if (scanStage == ScanStage.SCAN) {
+                logger.info("CURRENTLY IN SCAN STATE");
                 if (drone_scanner.hasOceanOnly()) {
                     decision.put("action", "echo");
                     radarParams.put("direction", drone.getHeading());
                     decision.put("parameters", radarParams);
                     //logger.info("Drone is scanning in direction: {}", radarParams);
+                    logger.info("CHANGING TO POST_SCAN STAGE");
                     scanStage = ScanStage.POST_SCAN;
                 } else {
                     // If the tile is already scanned, fly forwards
@@ -94,8 +123,11 @@ public class SearchAlgorithm {
                     }
                 }
             } else { // if scanStage == ScanStage.POST_SCAN
+                logger.info("CURRENTLY IN POST_SCAN STATE");
                 if (drone_radar.echoLastUsed()) {
                     if (!drone_radar.hasGroundAhead()) { // if echo is OUT OF BOUNDS (no ground found ahead), initiate U-Turn
+                        // Note: decision is assigned in the U_TURN state, not within this state
+                        logger.info("CHANGING TO U_TURN STATE");
                         scanState = ScanState.U_TURN;
                         previousFlyCounter = currentFlyCounter;
                         currentFlyCounter = 0;
@@ -130,11 +162,12 @@ public class SearchAlgorithm {
                             } else {
                                 decision.put("action", "scan");
                                 scanStage = ScanStage.SCAN;
+                                logger.info("CHANGING TO SCAN STAGE");
                             }
                         }
                     }
                     drone_radar.resetEchoUsage();
-                } else {
+                } else { // if echo wasn't used last turn
                     decision.put("action", "echo");
                     radarParams.put("direction", drone.getHeading());
                     decision.put("parameters", radarParams);
@@ -143,7 +176,14 @@ public class SearchAlgorithm {
             }
         }
 
+        // U_TURN state handles basic U-Turn logic (not at the top/bottom ends of the island)
+        /*
+         * State Strategy:
+         * - Turns right twice or left twice depending on the current direction (heading) and the scan direction
+         * - Once complete, it transitions to the line scan state
+         */
         if (scanState == ScanState.U_TURN) {
+            logger.info("CURRENTLY IN U_TURN STAGE");
             decision.put("action", "heading");
 
             if (uTurnDirection == UTurnDirection.TURN_RIGHT) {
@@ -156,21 +196,32 @@ public class SearchAlgorithm {
             decision.put("parameters", headingParams);
 
             if (uTurnCounter == 2) {
+                logger.info("CHANGING TO LINE_SCAN STATE");
                 scanState = ScanState.LINE_SCAN;
                 scanStage = ScanStage.PRE_SCAN;
+                logger.info("CHANGING TO PRE_SCAN STAGE");
             } else {
                 uTurnCounter++;
             }
         }
 
+        // END_OF_ISLAND state handles logic at the ends of the island (bottom and top)
+        /*
+         * State Strategy:
+         * - If at the bottom of the island, the drone will fly however many tiles were flown on the last line scan
+         * - If the drone encounters any land right beside it (range 0), the drone will move two tiles in the opposite direction from it
+         *      - This allows the drone to be able to scan those unscanned tiles identified next to it
+         * - Once it is done flying, it will initiate a U-Turn specialized for the end of island logic
+         */
         if (scanState == ScanState.END_OF_ISLAND) {
-            logger.info("PERFORMING END OF ISLAND LOGIC");
+            logger.info("CURRENTLY IN END_OF_ISLAND STATE");
             if (scanDirection == ScanDirection.SCAN_DOWN) { // If first pass
                 if (!continueFlying) { // if drone is not allowed to fly continously without echoing above
                     logger.info("NOT IN CONTINUE FLYING MODE");
                     if (drone_radar.echoLastUsed()) {
                         if (previousFlyCounter > 0) {
-                            if ((drone_radar.getRange() <= 1 && drone_radar.hasGroundAhead()) || endOfIslandTurnCounter == 2) {
+                            // If the drone finds ground right next to it, it moves two tiles away from it
+                            if ((drone_radar.getRange() == 0 && drone_radar.hasGroundAhead()) || endOfIslandTurnCounter == 2) {
                                 logger.info("MOVING AWAY FROM COAST");
                                 decision.put("action", "heading");
                                 if (endOfIslandTurnCounter == 1) {
@@ -199,6 +250,7 @@ public class SearchAlgorithm {
                                 drone_radar.resetEchoUsage();
                             }
                         } else {
+                            logger.info("CHANGING TO U_TURN_AT_END_OF_ISLAND STATE");
                             scanState = ScanState.U_TURN_END_OF_ISLAND;
                             uTurnCounter = 1;
                             drone_radar.resetEchoUsage();
@@ -215,17 +267,28 @@ public class SearchAlgorithm {
                         drone.move();
                         previousFlyCounter--;
                     } else {
+                        logger.info("CHANGING TO U_TURN_AT_END_OF_ISLAND STATE");
                         scanState = ScanState.U_TURN_END_OF_ISLAND;
                         uTurnCounter = 1;
                     }
                 }
             } else { // else if second pass
-                decision.put("action", "stop"); // Temporary
+                logger.info("STOP SEARCHING DUE TO SECOND PASS");
+                decision.put("action", "stop");
             }
         }
 
+        // U_TURN_END_OF_ISLAND state handles a special kind of U-Turn that allows the drone to scan the unscanned lines
+        // Only used after END_OF_ISLAND state
+        /*
+         * State Strategy:
+         * - Turns
+         * - Flys once
+         * - Turns again
+         * - Once U-Turns is complete, it will transition to the line scan state
+         */
         if (scanState == ScanState.U_TURN_END_OF_ISLAND) {
-            logger.info("PERFORMING U TURN AT END OF ISLAND LOGIC");
+            logger.info("CURRENTLY IN U_TURN_AT_END_OF_ISLAND STATE");
             if (uTurnCounter == 1 || uTurnCounter == 3) {
                 decision.put("action", "heading");
                 if (endOfIslandDirection == "E") {
@@ -236,6 +299,8 @@ public class SearchAlgorithm {
                 headingParams.put("direction", drone.getHeading()); 
                 decision.put("parameters", headingParams);
                 if (uTurnCounter == 3) {
+                    logger.info("CHANGING TO LINE_SCAN STATE");
+                    logger.info("CHANGING TO PRE_SCAN STAGE");
                     scanState = ScanState.LINE_SCAN;
                     scanStage = ScanStage.PRE_SCAN;
                     scanDirection = ScanDirection.SCAN_UP;
