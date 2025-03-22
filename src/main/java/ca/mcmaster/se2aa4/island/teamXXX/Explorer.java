@@ -23,11 +23,6 @@ public class Explorer implements IExplorerRaid {
     private DroneSearchMode droneSearchMode;
     private SearchAlgorithm searchAlgorithm;
     private IslandSearch islandSearch;
-    /*
-    private SearchStatus searchStatus = null;
-    private int flyCounter = 0;
-    private int OceanCounter = 0;
-    */
 
     @Override
     public void initialize(String s) {
@@ -49,6 +44,7 @@ public class Explorer implements IExplorerRaid {
         droneSearchMode = DroneSearchMode.START;
         searchAlgorithm = new SearchAlgorithm(drone, drone_radar, drone_scanner);
         islandSearch = new IslandSearch(drone, drone_radar);
+        islandSearch = new IslandSearch(drone, drone_radar);
     }
 
     //use this method to call a specific request to the drone
@@ -66,8 +62,19 @@ public class Explorer implements IExplorerRaid {
             //turn to the south and then initiate the ground search
             decision = islandSearch.initiateGroundSearch();
             droneSearchMode = DroneSearchMode.FIND_GROUND;
+            //turn to the south and then initiate the ground search
+            decision = islandSearch.initiateGroundSearch();
+            droneSearchMode = DroneSearchMode.FIND_GROUND;
         } 
         else if (droneSearchMode == DroneSearchMode.FIND_GROUND) {
+            
+            logger.info("CURRENTLY LOOKING FOR THE ISLAND");
+
+            decision = islandSearch.getNextMove();
+
+            //if the island is found change to initiate search algorithm
+            if(islandSearch.foundIsland()){
+                droneSearchMode = DroneSearchMode.FIND_CREEK;
             
             logger.info("CURRENTLY LOOKING FOR THE ISLAND");
 
@@ -80,10 +87,12 @@ public class Explorer implements IExplorerRaid {
         }
         else if (droneSearchMode == DroneSearchMode.FIND_CREEK) {
 
+
             logger.info("CURRENTLY USING FIND CREEK STRATEGY");
 
             decision = searchAlgorithm.getNextMove();
         }
+        
         
         //maybe you could do this first, and you may find a creek in the process
         else if(droneSearchMode == DroneSearchMode.FIND_SITE){

@@ -10,4 +10,3 @@ public enum IslandSearchStatus {
         GROUND_DETECTED,
         FOUND
 }
-
