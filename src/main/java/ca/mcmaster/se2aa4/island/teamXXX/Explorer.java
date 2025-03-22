@@ -22,6 +22,7 @@ public class Explorer implements IExplorerRaid {
     private ScanResults scanResults;
     private DroneSearchMode droneSearchMode;
     private SearchAlgorithm searchAlgorithm;
+    private IslandSearch islandSearch;
     /*
     private SearchStatus searchStatus = null;
     private int flyCounter = 0;
@@ -47,6 +48,7 @@ public class Explorer implements IExplorerRaid {
         drone_scanner = new PhotoScanner(drone, scanResults);
         droneSearchMode = DroneSearchMode.START;
         searchAlgorithm = new SearchAlgorithm(drone, drone_radar, drone_scanner);
+        islandSearch = new IslandSearch(drone, drone_radar);
     }
 
     //use this method to call a specific request to the drone
@@ -54,8 +56,6 @@ public class Explorer implements IExplorerRaid {
     public String takeDecision() {
         //create json objects for each action you would be doing
         JSONObject decision = new JSONObject();
-        JSONObject headingParams = new JSONObject();
-        JSONObject radarParams = new JSONObject();
 
         // Stops search if the drone ran out of battery
         if (drone.getBattery() <= 0) {
@@ -63,78 +63,28 @@ public class Explorer implements IExplorerRaid {
         }
 
         if (droneSearchMode == DroneSearchMode.START) {
-            //changing the heading is costly, so we want to avoid doing this too much
-            decision.put("action", "heading"); //change direction to south to start
-            drone.changeDirection("R"); 
-            headingParams.put("direction", drone.getHeading()); 
-            decision.put("parameters", headingParams); //cant pass string in here must be JSON object - use wrapper JSON
-            droneSearchMode = DroneSearchMode.FIND_GROUND; // change to find ground mode
+            //turn to the south and then initiate the ground search
+            decision = islandSearch.initiateGroundSearch();
+            droneSearchMode = DroneSearchMode.FIND_GROUND;
         } 
         else if (droneSearchMode == DroneSearchMode.FIND_GROUND) {
+            
+            logger.info("CURRENTLY LOOKING FOR THE ISLAND");
 
-            /*
-             * Strategy:
-             * - Keep moving South until land is found to the East
-             * - Turn to the East and continue flying forwards until directly over ground
-             */
+            decision = islandSearch.getNextMove();
 
-            // If the drone's radar detected ground
-            if (drone_radar.getFound().equalsIgnoreCase("GROUND")) {
-                // If the drone is currently over ground, scan
-                if (drone_radar.getRange() == 0) {
-                    decision.put("action", "scan");
-                    droneSearchMode = DroneSearchMode.FIND_CREEK; // Change to find creek mode once island is found
-                }
-                //if the drone is still heading south after finding land to the east
-                else if (drone.getHeading().equalsIgnoreCase("S")) {
-                    drone.setTurningStatus(true);
-
-                    //turning back towards the east and fly that way
-                    decision.put("action", "heading");
-                    drone.changeDirection("L"); 
-                    headingParams.put("direction", drone.getHeading()); 
-                    decision.put("parameters", headingParams);
-                }
-                else {
-                    //finished the turn start flying east
-                    drone.setTurningStatus(false);
-                    decision.put("action", "fly"); //fly forward
-                    drone.move(); //this method is from the DroneState Class basically makes the drone move
-                    logger.info("Drone is located at x: {}, y: {}", drone.getX(), drone.getY());
-                    logger.debug(drone.getBattery());
-                }
-            }
-            else {
-                // doing the radar part here:
-                decision.put("action", "echo");
-                radarParams.put("direction", "E"); // change the heading to scan on the left and right of the wings
-                decision.put("parameters", radarParams);
-                logger.info("Drone is scanning in direction: {}", radarParams);
+            //if the island is found change to initiate search algorithm
+            if(islandSearch.foundIsland()){
+                droneSearchMode = DroneSearchMode.FIND_CREEK;
             }
         }
         else if (droneSearchMode == DroneSearchMode.FIND_CREEK) {
-            /*
-             * Strategy:
-             * - Navigate drone around coastline to find creeks
-             * when you scan and there are more than one biomes (something and ocean)
-             * go down one row and start scanning that otherwise youll lose the island
-             */
 
-            /*
-             * NEXT STEPS
-             * -find a way to count if we get OCEAN multiple times then turn around instead of checking if ocean is mixed with something else
-             * -the above might fix the weird error where it skips an entire row for whatever reason - check SVG file
-             * -store the creek location to the Island class - implement a checker for it 
-             * -clean this class up - make abstractions and other classes for the search algorithm
-             * PLEASE ADD THESE TO THE KANBAN BOARD WHEN YOU DO THEM
-             * 
-             */
             logger.info("CURRENTLY USING FIND CREEK STRATEGY");
 
             decision = searchAlgorithm.getNextMove();
         }
         
-
         //maybe you could do this first, and you may find a creek in the process
         else if(droneSearchMode == DroneSearchMode.FIND_SITE){
 
@@ -147,8 +97,13 @@ public class Explorer implements IExplorerRaid {
         }
         
         logger.info("** Decision: {}",decision.toString());
+
+        logger.info("Current Creek Locations: {}", scanResults.getCreekLocations());
+        logger.info("creekID's " + scanResults.getCreekIDs());
+        logger.info("Current Closest Creek: {}", scanResults.getClosestCreek());
+        logger.info("emergency site coordinate: {},{}", scanResults.getSiteX(), scanResults.getSiteY());
+
         return decision.toString();
-    
     }
 
     @Override
@@ -184,12 +139,7 @@ public class Explorer implements IExplorerRaid {
             drone_radar.nothingFound();
         }
 
-        logger.info("Current Creek Locations: {}", scanResults.getCreekLocations());
-        logger.info("creekID's " + scanResults.getCreekIDs());
-        logger.info("Current Closest Creek: {}", scanResults.getClosestCreek());
-        logger.info("emergency site coordinate: {},{}", scanResults.getSiteX(), scanResults.getSiteY());
 
-        
 
     }
 
