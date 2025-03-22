@@ -92,6 +92,11 @@ public class Explorer implements IExplorerRaid {
         }
         
         logger.info("** Decision: {}",decision.toString());
+        logger.info("Current Creek Locations: {}", scanResults.getCreekLocations());
+        logger.info("creekID's " + scanResults.getCreekIDs());
+        logger.info("Current Closest Creek: {}", scanResults.getClosestCreek());
+        logger.info("emergency site coordinate: {},{}", scanResults.getSiteX(), scanResults.getSiteY());
+
         return decision.toString();
     }
 
