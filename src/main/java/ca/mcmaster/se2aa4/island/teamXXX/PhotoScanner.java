@@ -7,8 +7,13 @@ public class PhotoScanner {
     private JSONArray creeks;
     private JSONArray sites;
     private boolean scannedTile;
+    private DroneState drone;
+    private ScanResults scanResults;
 
-    public PhotoScanner() {
+
+    public PhotoScanner(DroneState drone, ScanResults scanResults) {
+        this.drone = drone;
+        this.scanResults = scanResults;
         this.biomes = null;
         this.creeks = null;
         this.sites = null;
@@ -19,6 +24,19 @@ public class PhotoScanner {
         creeks = extraInfo.getJSONArray("creeks");
         sites = extraInfo.getJSONArray("sites");
         scannedTile = true;
+        updateCreekCoordinatesAndID();
+        updateSiteCoordinates();
+    }
+
+    public void updateCreekCoordinatesAndID(){
+        if (creeks != null && creeks.length() > 0) {
+            double creekX = drone.getX();
+            double creekY = drone.getY();
+            String creekID = creeks.getString(0); // Assuming first creek
+
+            // Store in ScanResults
+            scanResults.addCreek(creekX, creekY, creekID);
+        }
     }
 
     // Checks if Ocean is one of the biomes
@@ -74,5 +92,15 @@ public class PhotoScanner {
     public void resetScannedTile() {
         scannedTile = false;
     }
+    
 
+    public void updateSiteCoordinates(){
+        if (sites != null && sites.length() > 0) {
+            double siteX = drone.getX();
+            double siteY = drone.getY();
+
+            // Store in ScanResults
+            scanResults.setSite(siteX, siteY);
+        }
+    }
 }

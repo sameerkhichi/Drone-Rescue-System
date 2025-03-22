@@ -19,6 +19,7 @@ public class Explorer implements IExplorerRaid {
     private DroneState drone;
     private Radar drone_radar;
     private PhotoScanner drone_scanner;
+    private ScanResults scanResults;
     private DroneSearchMode droneSearchMode;
     private SearchAlgorithm searchAlgorithm;
     /*
@@ -42,7 +43,8 @@ public class Explorer implements IExplorerRaid {
         logger.info("Drone initialized at ({}, {}), facing {}, with battery {}", 0, 0, direction, batteryLevel);
 
         drone_radar = new Radar();
-        drone_scanner = new PhotoScanner();
+        scanResults = new ScanResults();
+        drone_scanner = new PhotoScanner(drone, scanResults);
         droneSearchMode = DroneSearchMode.START;
         searchAlgorithm = new SearchAlgorithm(drone, drone_radar, drone_scanner);
     }
@@ -164,6 +166,8 @@ public class Explorer implements IExplorerRaid {
         JSONObject extraInfo = response.getJSONObject("extras");
         logger.info("Additional information received: {}\n", extraInfo);
 
+        logger.info("DRONE IS AT " + drone.getX());
+
         //deplete the drone battery by the cost
         drone.updateBatteryLife(cost); 
 
@@ -174,11 +178,18 @@ public class Explorer implements IExplorerRaid {
             } else if (extraInfo.has("creeks")) { // if action was scan
                 logger.info("Checking results of scan");
                 drone_scanner.updateScanData(extraInfo);
-            }
+            }   
         }
         if(extraInfo.isEmpty() && !drone.getTurningStatus()){
             drone_radar.nothingFound();
         }
+
+        logger.info("Current Creek Locations: {}", scanResults.getCreekLocations());
+        logger.info("creekID's " + scanResults.getCreekIDs());
+        logger.info("Current Closest Creek: {}", scanResults.getClosestCreek());
+        logger.info("emergency site coordinate: {},{}", scanResults.getSiteX(), scanResults.getSiteY());
+
+        
 
     }
 
