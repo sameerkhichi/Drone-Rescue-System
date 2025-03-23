@@ -52,8 +52,8 @@ public class Explorer implements IExplorerRaid {
         //create json objects for each action you would be doing
         JSONObject decision = new JSONObject();
 
-        // Stops search if the drone ran out of battery
-        if (drone.getBattery() <= 0) {
+        // Stops search if the drone ran out of battery - leaves enough budget to return to base.
+        if (drone.getBattery() <= 20) {
             droneSearchMode = DroneSearchMode.OFF;
         }
 
@@ -94,7 +94,7 @@ public class Explorer implements IExplorerRaid {
         logger.info("** Decision: {}",decision.toString());
         logger.info("Current Creek Locations: {}", scanResults.getCreekLocations());
         logger.info("creekID's " + scanResults.getCreekIDs());
-        logger.info("Current Closest Creek: {}", scanResults.getClosestCreek());
+        logger.info("Current Closest/Chosen Creek: {}", scanResults.getClosestCreek());
         logger.info("emergency site coordinate: {},{}", scanResults.getSiteX(), scanResults.getSiteY());
 
         return decision.toString();
@@ -115,7 +115,7 @@ public class Explorer implements IExplorerRaid {
         JSONObject extraInfo = response.getJSONObject("extras");
         logger.info("Additional information received: {}\n", extraInfo);
 
-        logger.info("DRONE IS AT " + drone.getX());
+        logger.info("DRONE IS AT X: " + drone.getX());
 
         //deplete the drone battery by the cost
         drone.updateBatteryLife(cost); 
@@ -137,9 +137,12 @@ public class Explorer implements IExplorerRaid {
 
     }
 
+    //this method is to deliver the identifier of the creek which the rescue boat will be sent
     @Override
-    public String deliverFinalReport() { //doesnt give anything rn - to update later 
-        return "no creek found";
+    public String deliverFinalReport(){
+        logger.info("Rescue Boat should be sent to creek: {}", scanResults.getClosestCreek());
+        return String.format("\nRescue boat should be sent to creek: %s", scanResults.getClosestCreek());
     }
+
 
 }

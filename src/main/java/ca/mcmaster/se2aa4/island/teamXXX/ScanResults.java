@@ -53,8 +53,8 @@ public class ScanResults {
 
     // NEW: Find the closest creek to the site
     public String getClosestCreek() {
-        if (!hasSite) {
-            return "No site found";
+        if (creekLocations.size() == 0) { //essentially if there were no creeks found after exploration
+            return "No creeks were located";
         }
     
         double minDistance = Double.MAX_VALUE;
@@ -71,13 +71,20 @@ public class ScanResults {
                 closestIndex = i;
             }
         }
+
+    
+    /* 
+        if(!hasSite){ //if no site is found - return any creek
+            return creekIDs.get(closestIndex);
+        }
     
         if (closestIndex != -1) {
             return String.format("Closest Creek: ID=%s at (%.2f, %.2f), Distance=%.2f",
                     creekIDs.get(closestIndex), creekLocations.get(closestIndex)[0], creekLocations.get(closestIndex)[1], minDistance);
         }
-    
-        return "No closest creek found.";
+    */
+        //if it gets here atleast one creek was found
+        return creekIDs.get(closestIndex);
     }
     
 
