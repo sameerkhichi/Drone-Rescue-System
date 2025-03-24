@@ -4,7 +4,7 @@ import org.json.JSONObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-public class IslandSearch{
+public class IslandSearch implements IslandDetection{
 
     private Radar drone_radar;
     private DroneState drone;
@@ -24,6 +24,7 @@ public class IslandSearch{
         this.drone_radar = drone_radar;
     }   
 
+    @Override
     public JSONObject getNextMove(){
 
         decision = new JSONObject();
@@ -130,6 +131,7 @@ public class IslandSearch{
     }
 
     //if the island 
+    @Override
     public boolean foundIsland(){
         if(islandSearchStatus == IslandSearchStatus.FOUND){
             return true;
@@ -141,6 +143,7 @@ public class IslandSearch{
         this.distanceToIsland = distanceToIsland;
     }
 
+    @Override
     public JSONObject initiateGroundSearch(){
 
         decision = new JSONObject();

@@ -21,8 +21,8 @@ public class Explorer implements IExplorerRaid {
     private PhotoScanner drone_scanner;
     private ScanResults scanResults;
     private DroneSearchMode droneSearchMode;
-    private SearchAlgorithm searchAlgorithm;
-    private IslandSearch islandSearch;
+    private SearchStrategy searchAlgorithm;
+    private IslandDetection islandSearch;
 
     @Override
     public void initialize(String s) {
