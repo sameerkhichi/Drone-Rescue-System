@@ -56,7 +56,7 @@ public class IslandSearch{
             if(islandSearchStatus == IslandSearchStatus.SETUP_FOR_TURN){
                 decision.put("action", "fly");
                 drone.move();
-                islandLogger.info("Drone is located at x: {}, y: {}", drone.getX(), drone.getY());
+                islandLogger.debug("Drone is located at x: {}, y: {}", drone.getX(), drone.getY());
                 islandLogger.debug(drone.getBattery());
                 islandSearchStatus = IslandSearchStatus.INITIAL_TURN;
                 return decision;
@@ -67,6 +67,7 @@ public class IslandSearch{
                 drone.changeDirection("L"); 
                 headingParams.put("direction", drone.getHeading()); 
                 decision.put("parameters", headingParams);
+                setDistanceToIsland(drone_radar.getRange()-1);
                 islandSearchStatus = IslandSearchStatus.ADJUSTING_TURN;
                 return decision;
             }
@@ -76,6 +77,7 @@ public class IslandSearch{
                 drone.changeDirection("L"); 
                 headingParams.put("direction", drone.getHeading()); 
                 decision.put("parameters", headingParams);
+                setDistanceToIsland(drone_radar.getRange()-2);
                 islandSearchStatus = IslandSearchStatus.FINAL_TURN;
                 return decision;
             }
@@ -86,6 +88,10 @@ public class IslandSearch{
                 headingParams.put("direction", drone.getHeading()); 
                 decision.put("parameters", headingParams);
                 setDistanceToIsland(drone_radar.getRange()-3); //since it moved 3 times while setting up to fly towards the island
+                if(distanceToIsland <= 0){
+                    islandSearchStatus = IslandSearchStatus.FOUND;
+                    return decision;
+                }
                 islandSearchStatus = IslandSearchStatus.HEAD_TO_ISLAND;
                 return decision;
             }
@@ -93,12 +99,12 @@ public class IslandSearch{
             else if(islandSearchStatus == IslandSearchStatus.HEAD_TO_ISLAND && distanceToIsland > 0){
                 decision.put("action", "fly");
                 drone.move();
-                islandLogger.info("Drone is located at x: {}, y: {}", drone.getX(), drone.getY());
+                islandLogger.debug("Drone is located at x: {}, y: {}", drone.getX(), drone.getY());
                 islandLogger.debug(drone.getBattery());
                 setDistanceToIsland(distanceToIsland-1);
 
                 //if the range becomes 0 the island is found - toggle found island (triggers creek search in explorer)
-                if(distanceToIsland == 0){
+                if(distanceToIsland <= 0){
                     islandSearchStatus = IslandSearchStatus.FOUND;
                 }
 
@@ -108,7 +114,7 @@ public class IslandSearch{
         else if(drone_radar.getFound().equalsIgnoreCase("OUT_OF_RANGE")){ //if drones radar returned out of range - fly forward (still facing south)
             decision.put("action", "fly");
             drone.move();
-            islandLogger.info("Drone is located at x: {}, y: {}", drone.getX(), drone.getY());
+            islandLogger.debug("Drone is located at x: {}, y: {}", drone.getX(), drone.getY());
             islandLogger.debug(drone.getBattery());
             drone_radar.nothingFound(); //reset what was found so it will radar again
             return decision;
@@ -119,7 +125,7 @@ public class IslandSearch{
         decision.put("action", "echo");
         radarParams.put("direction", "E");
         decision.put("parameters", radarParams);
-        islandLogger.info("Drone is scanning in direction: {}", radarParams);
+        islandLogger.debug("Drone is scanning in direction: {}", radarParams);
         return decision;
     }
 

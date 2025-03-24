@@ -92,10 +92,10 @@ public class Explorer implements IExplorerRaid {
         }
         
         logger.info("** Decision: {}",decision.toString());
-        logger.info("Current Creek Locations: {}", scanResults.getCreekLocations());
-        logger.info("creekID's " + scanResults.getCreekIDs());
-        logger.info("Current Closest/Chosen Creek: {}", scanResults.getClosestCreek());
-        logger.info("emergency site coordinate: {},{}", scanResults.getSiteX(), scanResults.getSiteY());
+        logger.debug("Current Creek Locations: {}", scanResults.getCreekLocations());
+        logger.debug("creekID's " + scanResults.getCreekIDs());
+        logger.debug("Current Closest/Chosen Creek: {}", scanResults.getClosestCreek());
+        logger.debug("emergency site coordinate: {},{}", scanResults.getSiteX(), scanResults.getSiteY());
 
         return decision.toString();
     }
@@ -115,7 +115,7 @@ public class Explorer implements IExplorerRaid {
         JSONObject extraInfo = response.getJSONObject("extras");
         logger.info("Additional information received: {}\n", extraInfo);
 
-        logger.info("DRONE IS AT X: " + drone.getX());
+        logger.debug("DRONE IS AT X: " + drone.getX());
 
         //deplete the drone battery by the cost
         drone.updateBatteryLife(cost); 
@@ -125,7 +125,7 @@ public class Explorer implements IExplorerRaid {
                 //updating the range and found (GROUND/OUT OF RANGE) in radar 
                 drone_radar.updateRadarData(extraInfo);
             } else if (extraInfo.has("creeks")) { // if action was scan
-                logger.info("Checking results of scan");
+                logger.debug("Checking results of scan");
                 drone_scanner.updateScanData(extraInfo);
             }   
         }
