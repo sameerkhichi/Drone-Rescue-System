@@ -78,7 +78,7 @@ public class IslandSearch implements IslandDetection{
                 drone.changeDirection("L"); 
                 headingParams.put("direction", drone.getHeading()); 
                 decision.put("parameters", headingParams);
-                setDistanceToIsland(drone_radar.getRange()-2);
+                setDistanceToIsland(drone_radar.getRange()-1);
                 islandSearchStatus = IslandSearchStatus.FINAL_TURN;
                 return decision;
             }
@@ -88,7 +88,7 @@ public class IslandSearch implements IslandDetection{
                 drone.changeDirection("R"); 
                 headingParams.put("direction", drone.getHeading()); 
                 decision.put("parameters", headingParams);
-                setDistanceToIsland(drone_radar.getRange()-3); //since it moved 3 times while setting up to fly towards the island
+                setDistanceToIsland(drone_radar.getRange()-1); //since it moved 3 times while setting up to fly towards the island
                 if(distanceToIsland <= 0){
                     islandSearchStatus = IslandSearchStatus.FOUND;
                     return decision;
